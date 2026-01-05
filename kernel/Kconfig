@@ -13,7 +13,7 @@ config KSU
 config KSU_DEBUG
 	bool "KernelSU debug mode"
 	depends on KSU
-	default n
+	default y
 	help
 	  Enable KernelSU debug mode.
 
