@@ -56,178 +56,25 @@ void apply_kernelsu_rules()
         ksu_allowxperm(db, KERNEL_SU_DOMAIN, ALL, "file", ALL);
     }
 
-    // ================ 关键修复：解决init访问/data/adb权限问题 ================
-    
-    // 修复：允许 init 搜索 adb_data_file 目录（对应 /data/adb/）
-    ksu_allow(db, "init", "adb_data_file", "dir", "search");
-    ksu_allow(db, "init", "adb_data_file", "dir", "open");
-    ksu_allow(db, "init", "adb_data_file", "dir", "read");
-    ksu_allow(db, "init", "adb_data_file", "dir", "getattr");
-    ksu_allow(db, "init", "adb_data_file", "dir", "write");
-    ksu_allow(db, "init", "adb_data_file", "dir", "add_name");
-    ksu_allow(db, "init", "adb_data_file", "dir", "remove_name");
-    ksu_allow(db, "init", "adb_data_file", "dir", "reparent");
-    ksu_allow(db, "init", "adb_data_file", "dir", "setattr");
-    ksu_allow(db, "init", "adb_data_file", "dir", "create");
-    
-    // 修复：允许 init 执行 adb_data_file 类型的文件（对应 /data/adb/ksud）
-    ksu_allow(db, "init", "adb_data_file", "file", "execute");
-    ksu_allow(db, "init", "adb_data_file", "file", "execute_no_trans");
-    ksu_allow(db, "init", "adb_data_file", "file", "open");
-    ksu_allow(db, "init", "adb_data_file", "file", "read");
-    ksu_allow(db, "init", "adb_data_file", "file", "getattr");
-    ksu_allow(db, "init", "adb_data_file", "file", "entrypoint");
-    ksu_allow(db, "init", "adb_data_file", "file", "write");
-    ksu_allow(db, "init", "adb_data_file", "file", "create");
-    ksu_allow(db, "init", "adb_data_file", "file", "setattr");
-    ksu_allow(db, "init", "adb_data_file", "file", "unlink");
-    ksu_allow(db, "init", "adb_data_file", "file", "rename");
-    ksu_allow(db, "init", "adb_data_file", "file", "append");
-    ksu_allow(db, "init", "adb_data_file", "file", "lock");
-    
-    // 修复：允许 init 转换到 su 域
-    ksu_allow(db, "init", KERNEL_SU_DOMAIN, "process", "transition");
-    ksu_type_transition(db, "init", "adb_data_file", "process", KERNEL_SU_DOMAIN,NULL);
-    
-    // 修复：允许 init 创建和管理 su 进程
-    ksu_allow(db, "init", KERNEL_SU_DOMAIN, "process", "fork");
-    ksu_allow(db, "init", KERNEL_SU_DOMAIN, "process", "sigchld");
-    ksu_allow(db, "init", KERNEL_SU_DOMAIN, "process", "rlimitinh");
-    ksu_allow(db, "init", KERNEL_SU_DOMAIN, "process", "siginh");
-    ksu_allow(db, "init", KERNEL_SU_DOMAIN, "process", "noatsecure");
-    ksu_allow(db, "init", KERNEL_SU_DOMAIN, "process", "dyntransition");
-    
-    // 修复：允许 su 域完全访问 adb_data_file
-    ksu_allow(db, KERNEL_SU_DOMAIN, "adb_data_file", "dir", ALL);
-    ksu_allow(db, KERNEL_SU_DOMAIN, "adb_data_file", "file", ALL);
 
-    // ================ 新问题修复：shell域访问adb_data_file ================
-    
-    // 修复：允许 shell 域访问 adb_data_file 目录（对应 /data/adb/）
-    // 日志错误：avc: denied { getattr } for path="/data/adb" scontext=u:r:shell:s0
-    ksu_allow(db, "shell", "adb_data_file", "dir", "getattr");
-    ksu_allow(db, "shell", "adb_data_file", "dir", "search");
-    ksu_allow(db, "shell", "adb_data_file", "dir", "open");
-    ksu_allow(db, "shell", "adb_data_file", "dir", "read");
-    ksu_allow(db, "shell", "adb_data_file", "dir", "write");
-    ksu_allow(db, "shell", "adb_data_file", "dir", "add_name");
-    ksu_allow(db, "shell", "adb_data_file", "dir", "remove_name");
-    ksu_allow(db, "shell", "adb_data_file", "dir", "setattr");
-    ksu_allow(db, "shell", "adb_data_file", "dir", "create");
-    
-    // 修复：允许 shell 域访问 adb_data_file 文件
-    ksu_allow(db, "shell", "adb_data_file", "file", "getattr");
-    ksu_allow(db, "shell", "adb_data_file", "file", "open");
-    ksu_allow(db, "shell", "adb_data_file", "file", "read");
-    ksu_allow(db, "shell", "adb_data_file", "file", "write");
-    ksu_allow(db, "shell", "adb_data_file", "file", "create");
-    ksu_allow(db, "shell", "adb_data_file", "file", "setattr");
-    ksu_allow(db, "shell", "adb_data_file", "file", "unlink");
-    ksu_allow(db, "shell", "adb_data_file", "file", "rename");
-    ksu_allow(db, "shell", "adb_data_file", "file", "execute");
-    ksu_allow(db, "shell", "adb_data_file", "file", "execute_no_trans");
-    
-    // ================ 修复：确保 /data/adb/ 目录可以被正确访问 ================
-    
-    // 允许 su 域对 /data/adb/ 目录有完全控制权限
-    ksu_allow(db, KERNEL_SU_DOMAIN, "adb_data_file", "filesystem", "mount");
-    ksu_allow(db, KERNEL_SU_DOMAIN, "adb_data_file", "filesystem", "unmount");
-    ksu_allow(db, KERNEL_SU_DOMAIN, "adb_data_file", "filesystem", "remount");
-    ksu_allow(db, KERNEL_SU_DOMAIN, "adb_data_file", "filesystem", "associate");
-    
-    
+// 允许 init 搜索 /data/adb 目录
+ksu_allow(db, "init", "adb_data_file", "dir", "search");
+ksu_allow(db, "init", "adb_data_file", "dir", "open");
+ksu_allow(db, "init", "adb_data_file", "dir", "read");
+ksu_allow(db, "init", "adb_data_file", "dir", "getattr");
 
-    // 允许 su 域管理 adb_data_file 类型的安全上下文
-    ksu_allow(db, KERNEL_SU_DOMAIN, "adb_data_file", "dir", "relabelfrom");
-    ksu_allow(db, KERNEL_SU_DOMAIN, "adb_data_file", "dir", "relabelto");
-    ksu_allow(db, KERNEL_SU_DOMAIN, "adb_data_file", "file", "relabelfrom");
-    ksu_allow(db, KERNEL_SU_DOMAIN, "adb_data_file", "file", "relabelto");
-    
-    // ================ 修复：文件系统访问权限 ================
-    
-    // 允许 su 域访问 data_file_type（/data 分区）
-    ksu_allow(db, KERNEL_SU_DOMAIN, "data_file_type", "filesystem", "mount");
-    ksu_allow(db, KERNEL_SU_DOMAIN, "data_file_type", "filesystem", "unmount");
-    ksu_allow(db, KERNEL_SU_DOMAIN, "data_file_type", "filesystem", "remount");
-    ksu_allow(db, KERNEL_SU_DOMAIN, "data_file_type", "filesystem", "associate");
-    
-    // 允许 su 域访问 rootfs（根文件系统）
-    ksu_allow(db, KERNEL_SU_DOMAIN, "rootfs", "filesystem", "mount");
-    ksu_allow(db, KERNEL_SU_DOMAIN, "rootfs", "filesystem", "unmount");
-    ksu_allow(db, KERNEL_SU_DOMAIN, "rootfs", "filesystem", "remount");
-    ksu_allow(db, KERNEL_SU_DOMAIN, "rootfs", "filesystem", "associate");
-    
-    //修复：init 对文件系统的访问 ================
-    
-    ksu_allow(db, "init", "data_file_type", "filesystem", "mount");
-    ksu_allow(db, "init", "data_file_type", "filesystem", "unmount");
-    ksu_allow(db, "init", "data_file_type", "filesystem", "remount");
-    ksu_allow(db, "init", "data_file_type", "filesystem", "associate");
-    ksu_allow(db, "init", "rootfs", "filesystem", "mount");
-    ksu_allow(db, "init", "rootfs", "filesystem", "unmount");
-    ksu_allow(db, "init", "rootfs", "filesystem", "remount");
-    ksu_allow(db, "init", "rootfs", "filesystem", "associate");
-    
-    // ================ 新问题修复：untrusted_app访问shell_test_data_file ================
-    
-    // 修复：允许 untrusted_app 搜索 shell_test_data_file 目录
-    ksu_allow(db, "untrusted_app", "shell_test_data_file", "dir", "search");
-    ksu_allow(db, "untrusted_app", "shell_test_data_file", "dir", "open");
-    ksu_allow(db, "untrusted_app", "shell_test_data_file", "dir", "read");
-    ksu_allow(db, "untrusted_app", "shell_test_data_file", "dir", "getattr");
-    // 加在你原来的app_data_file规则后面，完整放行
-ksu_allow(db, KERNEL_SU_DOMAIN, "app_data_file", "dir", ALL);
-ksu_allow(db, KERNEL_SU_DOMAIN, "app_data_file", "file", ALL);
-ksu_allow(db, KERNEL_SU_DOMAIN, "app_lib_file", "file", ALL); // 关键！lib目录专属标签
+// 允许 init 执行 /data/adb/ksud
+ksu_allow(db, "init", "adb_data_file", "file", "execute");
+ksu_allow(db, "init", "adb_data_file", "file", "execute_no_trans");
+ksu_allow(db, "init", "adb_data_file", "file", "open");
+ksu_allow(db, "init", "adb_data_file", "file", "read");
+ksu_allow(db, "init", "adb_data_file", "file", "getattr");
 
-    
-    // 修复：允许 untrusted_app 访问 shell_test_data_file 文件
-    ksu_allow(db, "untrusted_app", "shell_test_data_file", "file", "read");
-    ksu_allow(db, "untrusted_app", "shell_test_data_file", "file", "open");
-    ksu_allow(db, "untrusted_app", "shell_test_data_file", "file", "getattr");
-    ksu_allow(db, "untrusted_app", "shell_test_data_file", "file", "execute");
-    ksu_allow(db, "untrusted_app", "shell_test_data_file", "file", "execute_no_trans");
 
-    // ================ 修复：创建shell进程相关权限 ================
-    
-    // 允许 untrusted_app 转换到 shell 域（用于创建shell）
-    ksu_allow(db, "untrusted_app", "shell", "process", "transition");
-    ksu_allow(db, "untrusted_app", "shell", "process", "dyntransition");
-    
-    // 允许 untrusted_app 执行 shell_exec 类型的文件
-    ksu_allow(db, "untrusted_app", "shell_exec", "file", "execute");
-    ksu_allow(db, "untrusted_app", "shell_exec", "file", "execute_no_trans");
-    ksu_allow(db, "untrusted_app", "shell_exec", "file", "open");
-    ksu_allow(db, "untrusted_app", "shell_exec", "file", "read");
-    ksu_allow(db, "untrusted_app", "shell_exec", "file", "getattr");
-    
-    // 定义 untrusted_app 执行 shell_exec 类型文件时转换到 shell 域
-    ksu_type_transition(db, "untrusted_app", "shell_exec", "process", "shell",NULL);
-    
-    // 允许 shell 域访问各种资源
-    ksu_allow(db, "shell", "untrusted_app", "fd", "use");
-    ksu_allow(db, "shell", "untrusted_app", "fifo_file", "write");
-    ksu_allow(db, "shell", "untrusted_app", "fifo_file", "read");
-    ksu_allow(db, "shell", "untrusted_app", "fifo_file", "open");
-    ksu_allow(db, "shell", "untrusted_app", "fifo_file", "getattr");
-    
-    // 允许 untrusted_app 与 shell 进程通信
-    ksu_allow(db, "untrusted_app", "shell", "process", "sigchld");
-    ksu_allow(db, "untrusted_app", "shell", "process", "sigkill");
-    ksu_allow(db, "untrusted_app", "shell", "process", "signal");
-    ksu_allow(db, "untrusted_app", "shell", "process", "getattr");
-    ksu_allow(db, "untrusted_app", "shell", "process", "getpgid");
+// su 域完全访问 adb_data_file
+ksu_allow(db, KERNEL_SU_DOMAIN, "adb_data_file", "dir", ALL);
+ksu_allow(db, KERNEL_SU_DOMAIN, "adb_data_file", "file", ALL);
 
-    // ================ 允许 KERNEL_SU_DOMAIN 创建和管理 shell 进程 ================
-    
-    ksu_allow(db, KERNEL_SU_DOMAIN, "shell", "process", "transition");
-    ksu_allow(db, KERNEL_SU_DOMAIN, "shell", "process", "fork");
-    ksu_allow(db, KERNEL_SU_DOMAIN, "shell", "process", "sigchld");
-    ksu_allow(db, KERNEL_SU_DOMAIN, "shell_exec", "file", "execute");
-    ksu_type_transition(db, KERNEL_SU_DOMAIN, "shell_exec", "process", "shell",NULL);
-
-    // ================ 原有规则 ================
-    
     // our ksud triggered by init
     ksu_allow(db, "init", KERNEL_SU_DOMAIN, ALL, ALL);
 
@@ -252,6 +99,8 @@ ksu_allow(db, KERNEL_SU_DOMAIN, "app_lib_file", "file", ALL); // 关键！lib目
     ksu_allow(db, ALL, KERNEL_SU_DOMAIN, "fifo_file", "read");
     ksu_allow(db, ALL, KERNEL_SU_DOMAIN, "fifo_file", "open");
     ksu_allow(db, ALL, KERNEL_SU_DOMAIN, "fifo_file", "getattr");
+
+    // bootctl
     ksu_allow(db, "hwservicemanager", KERNEL_SU_DOMAIN, "dir", "search");
     ksu_allow(db, "hwservicemanager", KERNEL_SU_DOMAIN, "file", "read");
     ksu_allow(db, "hwservicemanager", KERNEL_SU_DOMAIN, "file", "open");
@@ -266,8 +115,7 @@ ksu_allow(db, KERNEL_SU_DOMAIN, "app_lib_file", "file", ALL); // 关键！lib目
 
     mutex_unlock(&ksu_rules);
 }
-    
-    
+
 #define MAX_SEPOL_LEN 128
 
 #define CMD_NORMAL_PERM 1
