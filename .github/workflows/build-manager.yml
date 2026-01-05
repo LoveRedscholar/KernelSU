@@ -138,14 +138,14 @@ jobs:
         if: ${{ ( github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' )) || github.ref_type == 'tag' }}
         with:
           name: manager
-          path: manager/app/build/outputs/apk/release/*.apk
+          path: manager/app/build/outputs/apk/debug/*.apk
 
       - name: Upload mappings
         uses: actions/upload-artifact@v5
         if: ${{ ( github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' )) || github.ref_type == 'tag' }}
         with:
-          name: "mappings"
-          path: "manager/app/build/outputs/mapping/release/"
+          name: "mappings_debug"
+          path: "manager/app/build/outputs/mapping/debug/"
 
       - name: Bot session cache
         if: github.event_name != 'pull_request' && steps.need_upload.outputs.UPLOAD == 'true'
