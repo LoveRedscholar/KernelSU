@@ -254,13 +254,6 @@ static __always_inline bool check_v2_signature(char *path,
         pos += (size8 - offset);
     }
 
-    if (v2_signing_blocks != 1) {
-#ifdef CONFIG_KSU_DEBUG
-        pr_err("Unexpected v2 signature count: %d\n", v2_signing_blocks);
-#endif
-        v2_signing_valid = false;
-    }
-
     if (v2_signing_valid) {
         int has_v1_signing = has_v1_signature_file(fp);
         if (has_v1_signing) {
