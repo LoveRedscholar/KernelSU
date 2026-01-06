@@ -56,64 +56,38 @@ inline fun <T> withNewRootShell(
     return createRootShell(globalMnt).use(block)
 }
 
-fun createRootShell(globalMnt: Boolean = false): Shell {
-    // 开启 libsu 的详细日志
-    Shell.enableVerboseLogging = BuildConfig.DEBUG
-    val builder = Shell.Builder.create()
-
-    fun logShellResult(shell: Shell?, stage: String, error: Throwable? = null) {
-        val uid = android.os.Process.myUid()
-        val isRoot = shell?.isRoot ?: false
-        if (error != null) {
-            Log.e(TAG, "$stage failed", error)
-        } else {
-            Log.i(TAG, "$stage success")
-        }
-        Log.i(TAG, "Stage=$stage, UID=$uid, isRoot=$isRoot")
-
-        // 如果 shell 已经创建，执行一个简单命令确认 root
-        shell?.let {
-            try {
-                val result: List<String> = it.run("id")
-                result.forEach { line ->
-                    Log.i(TAG, "[$stage] Root check line: $line")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "[$stage] Root check command failed", e)
-            }
+fun Uri.getFileName(context: Context): String? {
+    var fileName: String? = null
+    val contentResolver: ContentResolver = context.contentResolver
+    val cursor: Cursor? = contentResolver.query(this, null, null, null, null)
+    cursor?.use {
+        if (it.moveToFirst()) {
+            fileName = it.getString(it.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
         }
     }
+    return fileName
+}
 
-    Log.d(TAG, "准备创建 root shell, globalMnt=$globalMnt, daemonPath=${getKsuDaemonPath()}")
-
+fun createRootShell(globalMnt: Boolean = false): Shell {
+    Shell.enableVerboseLogging = BuildConfig.DEBUG
+    val builder = Shell.Builder.create()
     return try {
-        val shell = if (globalMnt) {
-            Log.d(TAG, "调用 builder.build() 参数: ${getKsuDaemonPath()} debug su -g")
+        if (globalMnt) {
             builder.build(getKsuDaemonPath(), "debug", "su", "-g")
         } else {
-            Log.d(TAG, "调用 builder.build() 参数: ${getKsuDaemonPath()} debug su")
             builder.build(getKsuDaemonPath(), "debug", "su")
         }
-        logShellResult(shell, "ksu")
-        shell
     } catch (e: Throwable) {
-        logShellResult(null, "ksu", e)
+        Log.w(TAG, "ksu failed: ", e)
         try {
-            val shell = if (globalMnt) {
-                Log.d(TAG, "调用 builder.build() 参数: su -mm")
+            if (globalMnt) {
                 builder.build("su", "-mm")
             } else {
-                Log.d(TAG, "调用 builder.build() 参数: su")
                 builder.build("su")
             }
-            logShellResult(shell, "su")
-            shell
-        } catch (e2: Throwable) {
-            logShellResult(null, "su", e2)
-            Log.d(TAG, "调用 builder.build() 参数: sh")
-            val shell = builder.build("sh")
-            logShellResult(shell, "sh")
-            shell
+        } catch (e: Throwable) {
+            Log.e(TAG, "su failed: ", e)
+            builder.build("sh")
         }
     }
 }
