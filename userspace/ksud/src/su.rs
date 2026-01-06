@@ -22,8 +22,10 @@ use rustix::{
 };
 
 pub fn grant_root(global_mnt: bool) -> Result<()> {
-    crate::ksucalls::grant_root()?;
+    let uid = rustix::process::getuid().as_raw();
+    println!("[DEBUG-SU] grant_root called_LHNB by uid={}", uid);
 
+    crate::ksucalls::grant_root()?;
     let mut command = Command::new("sh");
     let command = unsafe {
         command.pre_exec(move || {
@@ -80,10 +82,16 @@ fn wrap_tty(fd: c_int) {
 
 #[allow(clippy::similar_names)]
 pub fn root_shell() -> Result<()> {
-    // we are root now, this was set in kernel!
-
-    use anyhow::anyhow;
     let env_args: Vec<String> = env::args().collect();
+    let uid = rustix::process::getuid().as_raw();
+
+    println!("[DEBUG-SU] root_shell_LHNB invoked by uid={}", uid);
+
+    // 检查是否包含 create_shell 参数
+    if env_args.contains(&"create_shell".to_string()) {
+        println!("[DEBUG-SU] uid={} invoked with_LHNB create_shell flag", uid);
+    }
+    use anyhow::anyhow;
     let program = env_args[0].clone();
     let args = env_args.iter().position(|arg| arg == "-c").map_or_else(
         || env_args.clone(),
