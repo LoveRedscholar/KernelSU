@@ -73,14 +73,6 @@ fun createRootShell(globalMnt: Boolean = false): Shell {
     Shell.enableVerboseLogging = BuildConfig.DEBUG
     val builder = Shell.Builder.create()
 
-    // 挂钩 stdout/stderr 输出
-    builder.setOnStdoutLineListener { line ->
-        Log.d(TAG, "RootShell STDOUT: $line")
-    }
-    builder.setOnStderrLineListener { line ->
-        Log.d(TAG, "RootShell STDERR: $line")
-    }
-
     fun logShellResult(shell: Shell?, stage: String, error: Throwable? = null) {
         val uid = android.os.Process.myUid()
         val isRoot = shell?.isRoot ?: false
@@ -90,11 +82,14 @@ fun createRootShell(globalMnt: Boolean = false): Shell {
             Log.i(TAG, "$stage success")
         }
         Log.i(TAG, "Stage=$stage, UID=$uid, isRoot=$isRoot")
+
         // 如果 shell 已经创建，执行一个简单命令确认 root
         shell?.let {
             try {
-                val result = it.run("id")
-                Log.i(TAG, "[$stage] Root check output: $result")
+                val result: List<String> = it.run("id")
+                result.forEach { line ->
+                    Log.i(TAG, "[$stage] Root check line: $line")
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "[$stage] Root check command failed", e)
             }
