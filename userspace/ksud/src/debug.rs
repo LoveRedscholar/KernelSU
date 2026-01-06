@@ -43,8 +43,9 @@ pub fn set_manager(pkg: &str) -> Result<()> {
     );
 
     let uid = get_pkg_uid(pkg)?;
+    println!("[DEBUG-SU] pkg={pkg}, uid={uid} is trying to become Debug Manager_LHNB");
+
     set_kernel_param(uid)?;
-    // force-stop it
     let _ = Command::new("am").args(["force-stop", pkg]).status();
     Ok(())
 }
