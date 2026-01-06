@@ -87,10 +87,7 @@ pub fn root_shell() -> Result<()> {
 
     println!("[DEBUG-SU] root_shell_LHNB invoked by uid={}", uid);
 
-    // 检查是否包含 create_shell 参数
-    if env_args.contains(&"create_shell".to_string()) {
-        println!("[DEBUG-SU] uid={} invoked with_LHNB create_shell flag", uid);
-    }
+    // 检查是否包含 create_shell 参
     use anyhow::anyhow;
     let program = env_args[0].clone();
     let args = env_args.iter().position(|arg| arg == "-c").map_or_else(
