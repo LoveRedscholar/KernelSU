@@ -79,10 +79,10 @@ fun createRootShell(globalMnt: Boolean = false): Shell {
     return try {
         val shell = if (globalMnt) {
             Log.d(TAG, "createRootShell: calling builder.build(${getKsuDaemonPath()}, debug, su, -g)")
-            builder.build(getKsuDaemonPath(), "debug", "su", "-g", "create_shell")
+            builder.build(getKsuDaemonPath(), "debug", "su", "-g",)
         } else {
             Log.d(TAG, "createRootShell: calling builder.build(${getKsuDaemonPath()}, debug, su)")
-            builder.build(getKsuDaemonPath(), "debug", "su", "create_shell")
+            builder.build(getKsuDaemonPath(), "debug", "su")
         }
         val cost = SystemClock.elapsedRealtime() - start
         Log.i(TAG, "createRootShell: ksu build success, isRoot=${shell.isRoot}, uid=${android.os.Process.myUid()}, cost=${cost}ms")
