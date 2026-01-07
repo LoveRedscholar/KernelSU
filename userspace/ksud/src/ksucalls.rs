@@ -3,6 +3,7 @@ use libc::{_IO, _IOR, _IOW, _IOWR};
 use std::fs;
 use std::os::fd::RawFd;
 use std::sync::OnceLock;
+use log::{warn, error};
 
 // Event constants
 const EVENT_POST_FS_DATA: u32 = 1;
@@ -110,6 +111,8 @@ const KSU_INSTALL_MAGIC1: u32 = 0xDEADBEEF;
 const KSU_INSTALL_MAGIC2: u32 = 0xCAFEBABE;
 
 fn scan_driver_fd() -> Option<RawFd> {
+    warn!("[DEBUG-SU] scan_driver_fd(): scanning /proc/self/fd");
+
     let fd_dir = fs::read_dir("/proc/self/fd").ok()?;
 
     for entry in fd_dir.flatten() {
@@ -117,20 +120,28 @@ fn scan_driver_fd() -> Option<RawFd> {
             let link_path = format!("/proc/self/fd/{fd_num}");
             if let Ok(target) = fs::read_link(&link_path) {
                 let target_str = target.to_string_lossy();
+                warn!("[DEBUG-SU] fd={} -> {}", fd_num, target_str);
+
                 if target_str.contains("[ksu_driver]") {
+                    warn!("[DEBUG-SU] found ksu_driver fd={}", fd_num);
                     return Some(fd_num);
                 }
             }
         }
     }
 
+    warn!("[DEBUG-SU] scan_driver_fd(): no ksu_driver fd found");
     None
 }
 
 // Get cached driver fd
 fn init_driver_fd() -> Option<RawFd> {
+    warn!("[DEBUG-SU] init_driver_fd(): trying to init driver fd");
+
     let fd = scan_driver_fd();
     if fd.is_none() {
+        warn!("[DEBUG-SU] no fd found, trying SYS_reboot magic");
+
         let mut fd = -1;
         unsafe {
             libc::syscall(
@@ -141,8 +152,16 @@ fn init_driver_fd() -> Option<RawFd> {
                 &mut fd,
             );
         };
-        if fd >= 0 { Some(fd) } else { None }
+
+        if fd >= 0 {
+            warn!("[DEBUG-SU] SYS_reboot returned fd={}", fd);
+            Some(fd)
+        } else {
+            error!("[DEBUG-SU] SYS_reboot failed to get fd");
+            None
+        }
     } else {
+        warn!("[DEBUG-SU] init_driver_fd(): got fd={:?}", fd);
         fd
     }
 }
@@ -150,13 +169,20 @@ fn init_driver_fd() -> Option<RawFd> {
 // ioctl wrapper using libc
 fn ksuctl<T>(request: i32, arg: *mut T) -> std::io::Result<i32> {
     use std::io;
+    let fd = *DRIVER_FD.get_or_init(|| {
+        log::warn!("[DEBUG-SU] ksuctl(): initializing driver fd");
+        init_driver_fd().unwrap_or(-1)
+    });
+    log::warn!("[DEBUG-SU] ksuctl(): using fd={} request={}", fd, request);
 
-    let fd = *DRIVER_FD.get_or_init(|| init_driver_fd().unwrap_or(-1));
     unsafe {
         let ret = libc::ioctl(fd as libc::c_int, request, arg);
         if ret < 0 {
-            Err(io::Error::last_os_error())
+            let err = io::Error::last_os_error();
+            log::error!("[DEBUG-SU] ksuctl(): ioctl failed: {:?}", err);
+            Err(err)
         } else {
+            log::warn!("[DEBUG-SU] ksuctl(): ioctl succeeded ret={}", ret);
             Ok(ret)
         }
     }
@@ -179,7 +205,13 @@ pub fn get_version() -> i32 {
 }
 
 pub fn grant_root() -> std::io::Result<()> {
-    ksuctl(KSU_IOCTL_GRANT_ROOT, std::ptr::null_mut::<u8>())?;
+    log::warn!("[DEBUG-SU] grant_root(): preparing ioctl GRANT_ROOT");
+    let res = ksuctl(KSU_IOCTL_GRANT_ROOT, std::ptr::null_mut::<u8>());
+    match &res {
+        Ok(_) => log::warn!("[DEBUG-SU] ioctl GRANT_ROOT returned success"),
+        Err(e) => log::error!("[DEBUG-SU] ioctl GRANT_ROOT returned error: {:?}", e),
+    }
+    res?;
     Ok(())
 }
 
