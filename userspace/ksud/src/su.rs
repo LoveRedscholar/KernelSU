@@ -34,18 +34,26 @@ match &result {
 
 result?;
 
-    let mut command = Command::new("sh");
-    let command = unsafe {
-        command.pre_exec(move || {
-            if global_mnt {
-                let _ = utils::switch_mnt_ns(1);
-            }
-            Result::Ok(())
-        })
-    };
+    log::warn!("[DEBUG-SU] creating Command for sh");
+let mut command = Command::new("sh");
 
-    add_path_to_env(defs::BINARY_DIR)?;
-    Err(command.exec().into())
+let command = unsafe {
+    command.pre_exec(move || {
+        log::warn!("[DEBUG-SU] pre_exec: global_mnt={}", global_mnt);
+        if global_mnt {
+            let res = utils::switch_mnt_ns(1);
+            log::warn!("[DEBUG-SU] switch_mnt_ns(1) result={:?}", res);
+        }
+        Result::Ok(())
+    })
+};
+
+log::warn!("[DEBUG-SU] PATH before add: {:?}", std::env::var("PATH"));
+add_path_to_env(defs::BINARY_DIR)?;
+log::warn!("[DEBUG-SU] PATH after add: {:?}", std::env::var("PATH"));
+
+log::warn!("[DEBUG-SU] executing sh now…");
+Err(command.exec().into())
 }
 
 fn print_usage(program: &str, opts: &Options) {
