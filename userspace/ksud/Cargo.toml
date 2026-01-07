@@ -23,12 +23,10 @@ chrono = "0.4"
 regex-lite = "0.1"
 
 [target.'cfg(target_os = "android")'.dependencies]
-rustix = { version = "1", features = [
-    "all-apis",
-] }
+rustix = { version = "1", features = ["all-apis"] }
 android-properties = { version = "0.2", features = ["bionic-deprecated"] }
-android_logger = { version = "0.15", default-features = false }
-zip = { version = "7",  features = [
+android_logger = "0.15"
+zip = { version = "7", features = [
     "deflate",
     "deflate64",
     "time",
@@ -57,7 +55,3 @@ strip = true
 opt-level = "z"
 lto = true
 codegen-units = 1
-
-[dependencies]
-log = "0.4"
-android_logger = "0.13"
