@@ -69,49 +69,49 @@ fun Uri.getFileName(context: Context): String? {
 }
 
 fun createRootShell(globalMnt: Boolean = false): Shell {
-    // 保持原版行为与依赖不变，仅增加更细的日志与耗时统计
     Shell.enableVerboseLogging = BuildConfig.DEBUG
     val builder = Shell.Builder.create()
 
     val start = SystemClock.elapsedRealtime()
-    Log.d(TAG, "createRootShell: start, globalMnt=$globalMnt, daemonPath=${getKsuDaemonPath()}")
+    Log.e(TAG, "createRootShell: start, globalMnt=$globalMnt, daemonPath=${getKsuDaemonPath()}")
 
     return try {
         val shell = if (globalMnt) {
-            Log.d(TAG, "createRootShell: calling builder.build(${getKsuDaemonPath()}, debug, su, -g)")
-            builder.build(getKsuDaemonPath(), "debug", "su", "-g",)
+            Log.e(TAG, "createRootShell: calling builder.build(${getKsuDaemonPath()}, debug, su, -g)")
+            builder.build(getKsuDaemonPath(), "debug", "su", "-g")
         } else {
-            Log.d(TAG, "createRootShell: calling builder.build(${getKsuDaemonPath()}, debug, su)")
+            Log.e(TAG, "createRootShell: calling builder.build(${getKsuDaemonPath()}, debug, su)")
             builder.build(getKsuDaemonPath(), "debug", "su")
         }
         val cost = SystemClock.elapsedRealtime() - start
-        Log.i(TAG, "createRootShell: ksu build success, isRoot=${shell.isRoot}, uid=${android.os.Process.myUid()}, cost=${cost}ms")
+        Log.e(TAG, "createRootShell: ksu build success, isRoot=${shell.isRoot}, uid=${android.os.Process.myUid()}, cost=${cost}ms")
         shell
     } catch (e: Throwable) {
         val mid = SystemClock.elapsedRealtime()
-        Log.w(TAG, "createRootShell: ksu build failed after ${mid - start}ms", e)
+        Log.e(TAG, "createRootShell: ksu build failed after ${mid - start}ms", e)
         try {
             val shell = if (globalMnt) {
-                Log.d(TAG, "createRootShell: fallback calling builder.build(su, -mm)")
+                Log.e(TAG, "createRootShell: fallback calling builder.build(su, -mm)")
                 builder.build("su", "-mm")
             } else {
-                Log.d(TAG, "createRootShell: fallback calling builder.build(su)")
+                Log.e(TAG, "createRootShell: fallback calling builder.build(su)")
                 builder.build("su")
             }
             val cost = SystemClock.elapsedRealtime() - start
-            Log.i(TAG, "createRootShell: su build success, isRoot=${shell.isRoot}, uid=${android.os.Process.myUid()}, cost=${cost}ms")
+            Log.e(TAG, "createRootShell: su build success, isRoot=${shell.isRoot}, uid=${android.os.Process.myUid()}, cost=${cost}ms")
             shell
         } catch (e2: Throwable) {
             val end = SystemClock.elapsedRealtime()
             Log.e(TAG, "createRootShell: su build failed after ${end - start}ms, fallback to sh", e2)
-            Log.d(TAG, "createRootShell: calling builder.build(sh)")
+            Log.e(TAG, "createRootShell: calling builder.build(sh)")
             val shell = builder.build("sh")
             val finalCost = SystemClock.elapsedRealtime() - start
-            Log.i(TAG, "createRootShell: sh build success, isRoot=${shell.isRoot}, uid=${android.os.Process.myUid()}, cost=${finalCost}ms")
+            Log.e(TAG, "createRootShell: sh build success, isRoot=${shell.isRoot}, uid=${android.os.Process.myUid()}, cost=${finalCost}ms")
             shell
         }
     }
 }
+
 
 fun execKsud(args: String, newShell: Boolean = false): Boolean {
     return if (newShell) {
