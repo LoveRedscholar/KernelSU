@@ -24,13 +24,14 @@ use rustix::{
 pub fn grant_root(global_mnt: bool) -> Result<()> {
     log::warn!("[DEBUG-SU] entering grant_root, global_mnt={}", global_mnt);
 
-    // 调用 ksucalls::grant_root 并捕获结果
     let result = crate::ksucalls::grant_root();
 
-    match &result {
-        Ok(_) => log::warn!("[DEBUG-SU] ksucalls::grant_root succeeded"),
-        Err(e) => log::error!("[DEBUG-SU] ksucalls::grant_root failed: {:?}", e),
-    }
+match result {
+    Ok(_) => log::warn!("[DEBUG-SU] ksucalls::grant_root succeeded"),
+    Err(e) => log::error!("[DEBUG-SU] ksucalls::grant_root failed: {:?}", e),
+}
+
+result?;
 
     // 如果失败，返回错误；成功则继续执行
     result?;
