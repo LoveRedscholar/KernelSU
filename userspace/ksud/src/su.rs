@@ -51,9 +51,10 @@ let command = unsafe {
 log::warn!("[DEBUG-SU] PATH before add: {:?}", std::env::var("PATH"));
 add_path_to_env(defs::BINARY_DIR)?;
 log::warn!("[DEBUG-SU] PATH after add: {:?}", std::env::var("PATH"));
-
 log::warn!("[DEBUG-SU] executing sh now…");
-Err(command.exec().into())
+let err = command.exec();
+log::error!("[DEBUG-SU] exec failed: {:?}", err);
+Err(err.into())
 }
 
 fn print_usage(program: &str, opts: &Options) {
