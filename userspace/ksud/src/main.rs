@@ -11,7 +11,8 @@
 )]
 
 use android_logger::Config;
-use log::Level;
+use log::LevelFilter;
+use anyhow::Result;
 
 mod apk_sign;
 mod assets;
@@ -46,22 +47,14 @@ mod su;
 #[cfg(target_os = "android")]
 mod utils;
 
-use android_logger::{Config, Level};
-use anyhow::Result;
-
-use android_logger::{Config, Level};
-use anyhow::Result;
-
 fn main() -> Result<()> {
     #[cfg(target_os = "android")]
     {
-        // 修复点1：替换 with_min_level 为 with_max_level
-        // 修复点2：补充 init_once 必需的第二个参数 Default::default()
+        // 初始化日志系统，设置 logcat 的 tag 和日志级别
         android_logger::init_once(
             Config::default()
                 .with_tag("KernelSU")
-                .with_max_level(Level::Info),
-            Default::default()
+                .with_max_level(LevelFilter::Warn), // 统一 warn 级别
         );
 
         cli::run()
