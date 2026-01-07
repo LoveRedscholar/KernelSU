@@ -27,7 +27,7 @@ pub fn grant_root(global_mnt: bool) -> Result<()> {
     // 调用 ksucalls::grant_root 并捕获结果
 let result = crate::ksucalls::grant_root();
 
-match result {
+match &result {
     Ok(_) => log::warn!("[DEBUG-SU] ksucalls::grant_root succeeded"),
     Err(e) => log::error!("[DEBUG-SU] ksucalls::grant_root failed: {:?}", e),
 }
