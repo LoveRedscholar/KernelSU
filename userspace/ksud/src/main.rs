@@ -11,7 +11,7 @@
 )]
 
 use android_logger::Config;
-use log::LevelFilter;
+use log::{info, LevelFilter};
 use anyhow::Result;
 
 mod apk_sign;
@@ -50,12 +50,15 @@ mod utils;
 fn main() -> Result<()> {
     #[cfg(target_os = "android")]
     {
-        // 初始化日志系统，设置 logcat 的 tag 和日志级别
+        // 初始化日志系统，设置 logcat 的 tag 和最低日志级别
         android_logger::init_once(
             Config::default()
-                .with_tag("KernelSU")
-                .with_max_level(LevelFilter::Warn), // 统一 warn 级别
+                .with_tag("KernelSUNB")   // 在 logcat 中显示的 tag
+                .with_min_level(LevelFilter::Info),
         );
+
+        // 打印一条测试日志，确认 Rust 日志能进入 logcat
+        info!("Rust logger initialized successfully, hello from KernelSUNB!");
 
         cli::run()
     }
