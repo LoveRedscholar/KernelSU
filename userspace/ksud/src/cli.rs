@@ -567,7 +567,10 @@ pub fn run() -> Result<()> {
                 println!("Kernel Version: {}", ksucalls::get_version());
                 Ok(())
             }
-            Debug::Su { global_mnt } => crate::su::grant_root(global_mnt),
+            Debug::Su { global_mnt } => {
+    log::warn!("[DEBUG-SU] entering grant_root, global_mnt={}", global_mnt);
+    crate::su::grant_root(global_mnt)
+            },
             Debug::Test => assets::ensure_binaries(false),
             Debug::Mark { command } => match command {
                 MarkCommand::Get { pid } => debug::mark_get(pid),
