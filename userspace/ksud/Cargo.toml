@@ -3,17 +3,16 @@ name = "ksud"
 version = "0.1.0"
 edition = "2024"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 const_format = "0.2"
 log = "0.4"
+android_logger = "0.15"   # ✅ 放到通用依赖，所有平台都能编译
 env_logger = { version = "0.11", default-features = false }
 rust-embed = { version = "8", features = [
     "debug-embed",
-    "compression", # must clean build after updating binaries
+    "compression",
 ] }
 which = "8"
 sha1 = "0.10"
@@ -25,7 +24,6 @@ regex-lite = "0.1"
 [target.'cfg(target_os = "android")'.dependencies]
 rustix = { version = "1", features = ["all-apis"] }
 android-properties = { version = "0.2", features = ["bionic-deprecated"] }
-android_logger = "0.15"
 zip = { version = "7", features = [
     "deflate",
     "deflate64",
