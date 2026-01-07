@@ -1,10 +1,11 @@
-use anyhow::{Context, Ok, Result, bail, ensure};
+use anyhow::{Context, Result, bail, ensure};
 use std::{
     path::{Path, PathBuf},
     process::Command,
 };
 
 use crate::ksucalls;
+use log::warn;
 
 const KERNEL_PARAM_PATH: &str = "/sys/module/kernelsu";
 
@@ -23,7 +24,7 @@ fn set_kernel_param(uid: u32) -> Result<()> {
     std::fs::write(&ksu_debug_manager_uid, uid.to_string())?;
     let after_uid = read_u32(&ksu_debug_manager_uid)?;
 
-    println!("set manager uid: {before_uid} -> {after_uid}");
+    warn!("set manager uid: {} -> {}", before_uid, after_uid);
 
     Ok(())
 }
@@ -43,10 +44,14 @@ pub fn set_manager(pkg: &str) -> Result<()> {
     );
 
     let uid = get_pkg_uid(pkg)?;
-    println!("[DEBUG-SU] pkg={pkg}, uid={uid} is trying to become Debug Manager_LHNB");
+    warn!("[DEBUG-SU] pkg={} uid={} is trying to become Debug Manager", pkg, uid);
 
     set_kernel_param(uid)?;
+    warn!("[DEBUG-SU] Debug Manager UID set successfully for pkg={} uid={}", pkg, uid);
+
     let _ = Command::new("am").args(["force-stop", pkg]).status();
+    warn!("[DEBUG-SU] force-stopped pkg={} to refresh UID setting", pkg);
+
     Ok(())
 }
 
@@ -56,8 +61,9 @@ pub fn mark_get(pid: i32) -> Result<()> {
     if pid == 0 {
         bail!("Please specify a pid to get its mark status");
     }
-    println!(
-        "Process {pid} mark status: {}",
+    warn!(
+        "Process {} mark status: {}",
+        pid,
         if result != 0 { "marked" } else { "unmarked" }
     );
     Ok(())
@@ -67,9 +73,9 @@ pub fn mark_get(pid: i32) -> Result<()> {
 pub fn mark_set(pid: i32) -> Result<()> {
     ksucalls::mark_set(pid)?;
     if pid == 0 {
-        println!("All processes marked successfully");
+        warn!("All processes marked successfully");
     } else {
-        println!("Process {pid} marked successfully");
+        warn!("Process {} marked successfully", pid);
     }
     Ok(())
 }
@@ -78,9 +84,9 @@ pub fn mark_set(pid: i32) -> Result<()> {
 pub fn mark_unset(pid: i32) -> Result<()> {
     ksucalls::mark_unset(pid)?;
     if pid == 0 {
-        println!("All processes unmarked successfully");
+        warn!("All processes unmarked successfully");
     } else {
-        println!("Process {pid} unmarked successfully");
+        warn!("Process {} unmarked successfully", pid);
     }
     Ok(())
 }
@@ -88,6 +94,6 @@ pub fn mark_unset(pid: i32) -> Result<()> {
 /// Refresh mark for all running processes
 pub fn mark_refresh() -> Result<()> {
     ksucalls::mark_refresh()?;
-    println!("Refreshed mark for all running processes");
+    warn!("Refreshed mark for all running processes");
     Ok(())
 }
