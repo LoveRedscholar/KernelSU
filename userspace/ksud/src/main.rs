@@ -46,14 +46,22 @@ mod su;
 #[cfg(target_os = "android")]
 mod utils;
 
-fn main() -> anyhow::Result<()> {
+use android_logger::{Config, Level};
+use anyhow::Result;
+
+use android_logger::{Config, Level};
+use anyhow::Result;
+
+fn main() -> Result<()> {
     #[cfg(target_os = "android")]
     {
-        // 初始化日志系统，设置 logcat 的 tag 和最低日志级别
+        // 修复点1：替换 with_min_level 为 with_max_level
+        // 修复点2：补充 init_once 必需的第二个参数 Default::default()
         android_logger::init_once(
             Config::default()
-                .with_tag("KernelSU")   // 在 logcat 中显示的 tag
-                .with_min_level(Level::Info),
+                .with_tag("KernelSU")
+                .with_max_level(Level::Info),
+            Default::default()
         );
 
         cli::run()
