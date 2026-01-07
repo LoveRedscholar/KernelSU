@@ -10,6 +10,9 @@
     clippy::cast_possible_wrap
 )]
 
+use android_logger::Config;
+use log::Level;
+
 mod apk_sign;
 mod assets;
 mod boot_patch;
@@ -46,6 +49,13 @@ mod utils;
 fn main() -> anyhow::Result<()> {
     #[cfg(target_os = "android")]
     {
+        // 初始化日志系统，设置 logcat 的 tag 和最低日志级别
+        android_logger::init_once(
+            Config::default()
+                .with_tag("KernelSU")   // 在 logcat 中显示的 tag
+                .with_min_level(Level::Info),
+        );
+
         cli::run()
     }
     #[cfg(not(target_os = "android"))]
