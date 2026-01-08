@@ -21,7 +21,6 @@ use rustix::{
     thread::{Gid, Uid, set_thread_res_gid, set_thread_res_uid},
 };
 
-use std::process::{Command, Stdio};
 
 pub fn grant_root(global_mnt: bool) -> Result<()> {
     log::warn!("[DEBUG-SU] creating Command for /system/bin/sh -i");
