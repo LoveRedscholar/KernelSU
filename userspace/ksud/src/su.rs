@@ -21,40 +21,36 @@ use rustix::{
     thread::{Gid, Uid, set_thread_res_gid, set_thread_res_uid},
 };
 
+use std::process::{Command, Stdio};
+
 pub fn grant_root(global_mnt: bool) -> Result<()> {
-    log::warn!("[DEBUG-SU] entering grant_root, global_mnt={}", global_mnt);
+    log::warn!("[DEBUG-SU] creating Command for /system/bin/sh -i");
 
-    // 调用 ksucalls::grant_root 并捕获结果
-let result = crate::ksucalls::grant_root();
+    // 先创建 Command，再加参数
+    let mut command = Command::new("/system/bin/sh");
+    command.arg("-i");
 
-match &result {
-    Ok(_) => log::warn!("[DEBUG-SU] ksucalls::grant_root succeeded"),
-    Err(e) => log::error!("[DEBUG-SU] ksucalls::grant_root failed: {:?}", e),
-}
+    // 显式继承 I/O，避免 shell 退出
+    command.stdin(Stdio::inherit())
+           .stdout(Stdio::inherit())
+           .stderr(Stdio::inherit());
 
-result?;
+    let command = unsafe {
+        command.pre_exec(move || {
+            log::warn!("[DEBUG-SU] pre_exec: global_mnt={}", global_mnt);
+            if global_mnt {
+                let res = utils::switch_mnt_ns(1);
+                log::warn!("[DEBUG-SU] switch_mnt_ns(1) result={:?}", res);
+            }
+            Ok(())
+        })
+    };
 
-    log::warn!("[DEBUG-SU] creating Command for sh");
-let mut command = Command::new("/system/bin/sh").arg("-i")
+    log::warn!("[DEBUG-SU] executing /system/bin/sh -i now…");
+    let err = command.exec();
+    log::error!("[DEBUG-SU] exec failed: {:?}", err);
 
-let command = unsafe {
-    command.pre_exec(move || {
-        log::warn!("[DEBUG-SU] pre_exec: global_mnt={}", global_mnt);
-        if global_mnt {
-            let res = utils::switch_mnt_ns(1);
-            log::warn!("[DEBUG-SU] switch_mnt_ns(1) result={:?}", res);
-        }
-        Result::Ok(())
-    })
-};
-
-log::warn!("[DEBUG-SU] PATH before add: {:?}", std::env::var("PATH"));
-add_path_to_env(defs::BINARY_DIR)?;
-log::warn!("[DEBUG-SU] PATH after add: {:?}", std::env::var("PATH"));
-log::warn!("[DEBUG-SU] executing sh now…");
-let err = command.exec();
-log::error!("[DEBUG-SU] exec failed: {:?}", err);
-Err(err.into())
+    Err(err.into())
 }
 
 fn print_usage(program: &str, opts: &Options) {
