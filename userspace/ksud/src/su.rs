@@ -35,7 +35,7 @@ match &result {
 result?;
 
     log::warn!("[DEBUG-SU] creating Command for sh");
-let mut command = Command::new("sh");
+let mut command = Command::new("sh_sbsbsbsb");
 
 let command = unsafe {
     command.pre_exec(move || {
