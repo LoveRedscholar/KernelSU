@@ -27,7 +27,7 @@ import java.io.File
  * @author weishu
  * @date 2023/1/1.
  */
-private const val TAG = "KsuCli"
+private const val TAG = "KernelSUNB"
 
 private fun getKsuDaemonPath(): String {
     return ksuApp.applicationInfo.nativeLibraryDir + File.separator + "libksud.so"
