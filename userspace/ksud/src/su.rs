@@ -12,7 +12,7 @@ use std::os::unix::process::CommandExt;
 use std::path::PathBuf;
 use std::{
     ffi::{CStr, CString},
-    process::Command,
+    process::{Command, Stdio},
 };
 
 use crate::ksucalls::get_wrapped_fd;
