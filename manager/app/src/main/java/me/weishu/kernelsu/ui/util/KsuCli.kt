@@ -82,23 +82,23 @@ fun checkRootShell(globalMnt: Boolean = false): Boolean {
     val start = SystemClock.elapsedRealtime()
     var ok = false
 
-    while (SystemClock.elapsedRealtime() - start < 2000) { // 检测 2 秒
+    val os = process.outputStream
+    val reader = process.inputStream.bufferedReader()
+
+    while (SystemClock.elapsedRealtime() - start < 3000) { // 检测 3 秒
         if (process.isAlive) {
             try {
-                // 尝试写入命令
-                val os = process.outputStream
                 os.write("id\n".toByteArray())
                 os.flush()
 
-                // 读取输出
-                val reader = process.inputStream.bufferedReader()
                 val output = reader.readLine() ?: ""
                 if (output.contains("uid=0")) {
                     ok = true
                     break
                 }
-            } catch (_: Exception) {
-                // 如果写入/读取失败，继续循环
+            } catch (e: Exception) {
+                // 打印异常方便调试
+                android.util.Log.e("KSU", "checkRootShell error", e)
             }
         } else {
             break
@@ -106,10 +106,12 @@ fun checkRootShell(globalMnt: Boolean = false): Boolean {
         Thread.sleep(1)
     }
 
+    os.close()
+    reader.close()
+    process.destroy()
+
     return ok
 }
-}
-
 
 fun execKsud(args: String, newShell: Boolean = false): Boolean {
     return if (newShell) {
