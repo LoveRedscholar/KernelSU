@@ -21,35 +21,56 @@ use rustix::{
     thread::{Gid, Uid, set_thread_res_gid, set_thread_res_uid},
 };
 
+use std::time::{Duration, Instant};
+use std::thread;
 
-pub fn grant_root(global_mnt: bool) -> Result<()> {
-    log::warn!("[DEBUG-SU] creating Command for /system/bin/sh -i");
-
-    // 先创建 Command，再加参数
-    let mut command = Command::new("/system/bin/sh");
-    command.arg("-i");
-
-    // 显式继承 I/O，避免 shell 退出
-    command.stdin(Stdio::inherit())
-           .stdout(Stdio::inherit())
-           .stderr(Stdio::inherit());
-
+fn grant_shell(global_mnt: bool) -> Result<(), Box<dyn std::error::Error>> {
+    let mut command = Command::new("sh");
     let command = unsafe {
         command.pre_exec(move || {
-            log::warn!("[DEBUG-SU] pre_exec: global_mnt={}", global_mnt);
             if global_mnt {
-                let res = utils::switch_mnt_ns(1);
-                log::warn!("[DEBUG-SU] switch_mnt_ns(1) result={:?}", res);
+                let _ = utils::switch_mnt_ns(1);
             }
             Ok(())
         })
     };
 
-    log::warn!("[DEBUG-SU] executing /system/bin/sh -i now…");
-    let err = command.exec();
-    log::error!("[DEBUG-SU] exec failed: {:?}", err);
+    // 环境变量处理
+    add_path_to_env(defs::BINARY_DIR)?;
 
-    Err(err.into())
+    // 启动子进程
+    let mut child = command
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()?;
+
+    log::warn!("[DEBUG-SU] spawned shell with pid {}", child.id());
+
+    // 循环检测 2 秒
+    let start = Instant::now();
+    let timeout = Duration::from_secs(2);
+    let mut alive = false;
+
+    while start.elapsed() < timeout {
+        match child.try_wait()? {
+            Some(status) => {
+                log::warn!("[DEBUG-SU] shell exited with {:?}", status);
+                break;
+            }
+            None => {
+                alive = true;
+                // 子进程还在运行
+            }
+        }
+        thread::sleep(Duration::from_millis(5));
+    }
+
+    if alive {
+        log::warn!("[DEBUG-SU] shell is still alive after 2s");
+        Ok(())
+    } else {
+        Err("shell not alive".into())
+    }
 }
 
 fn print_usage(program: &str, opts: &Options) {
